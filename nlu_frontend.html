@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NLU - Code Style Query</title>
+    <style>
+        :root {
+            --bg: #0f1720;
+            --panel: #0b1220;
+            --muted: #98a0b3;
+            --accent: #7c3aed;
+            --green: #10b981;
+            --red: #ef4444;
+            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: linear-gradient(180deg, #071022 0%, #071226 100%);
+            font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            color: #e6eef8
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 1fr 480px;
+            gap: 18px;
+            max-width: 1200px;
+            margin: 28px auto;
+            padding: 18px
+        }
+
+        /* Left: code-like editor */
+        .editor-wrap {
+            background: var(--panel);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(2, 6, 23, .6);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, .03)
+        }
+
+        .editor-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .03);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .01), transparent)
+        }
+
+        .chip {
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .02);
+            color: var(--muted)
+        }
+
+        .title {
+            font-weight: 600;
+            color: #dbeafe
+        }
+
+        .editor {
+            display: flex
+        }
+
+        .gutter {
+            width: 48px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, .01), transparent);
+            padding: 12px 8px 12px 12px;
+            text-align: right;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 13px;
+            line-height: 1.6
+        }
+
+        .gutter div {
+            opacity: .7
+        }
+
+        textarea.code {
+            flex: 1;
+            min-height: 420px;
+            background: transparent;
+            border: 0;
+            outline: none;
+            padding: 12px;
+            font-family: var(--mono);
+            font-size: 14px;
+            color: #e6eef8;
+            line-height: 1.6;
+            resize: vertical
+        }
+
+        /* Right: result panel */
+        .panel {
+            background: var(--panel);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, .03);
+            box-shadow: 0 8px 30px rgba(2, 6, 23, .6)
+        }
+
+        .panel h3 {
+            margin: 0 0 10px 0;
+            color: #e6eef8
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px
+        }
+
+        button {
+            background: linear-gradient(180deg, var(--accent), #5b21b6);
+            border: 0;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer
+        }
+
+        button.ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, .06);
+            color: var(--muted);
+        }
+
+        button.small {
+            padding: 6px 8px;
+            font-size: 13px
+        }
+
+        .out {
+            background: #07101a;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: var(--mono);
+            font-size: 13px;
+            color: #cfe7ff;
+            min-height: 240px;
+            overflow: auto;
+            white-space: pre-wrap
+        }
+
+        .hint {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px
+        }
+
+        .status {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        footer {
+            grid-column: 1/-1;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 14px
+        }
+
+        @media (max-width:940px) {
+            .app {
+                grid-template-columns: 1fr;
+                max-width: 720px;
+                padding: 12px
+            }
+
+            .editor-wrap {
+                order: 2
+            }
+
+            .panel {
+                order: 1
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div class="editor-wrap">
+            <div class="editor-toolbar">
+                <div class="chip">NLU Query</div>
+                <div style="flex:1"></div>
+                <div class="title">Editor</div>
+            </div>
+
+            <div class="editor">
+                <div class="gutter" id="gutter">
+                    <!-- line numbers populated by JS -->
+                </div>
+                <textarea id="queryInput" class="code" spellcheck="false"
+                    placeholder="Type your natural language query here. e.g.Which of Maharashtra, Ahmedabad, New Zealand had highest average temperature in January?Show me rainfall for Chennai in October"></textarea>
+            </div>
+            <div
+                style="padding:12px;border-top:1px solid rgba(255,255,255,.02);display:flex;gap:8px;align-items:center">
+                <button id="analyzeBtn">Analyze</button>
+                <button id="fetchBtn" class="ghost small" disabled>Fetch Metric</button>
+                <div style="flex:1"></div>
+                <div class="status" id="status">Ready</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Result</h3>
+            <div class="hint">First click <strong>Analyze</strong> to extract metric(s). Then click <strong>Fetch
+                    Metric</strong> to request the provider for the first extracted metric and location.</div>
+            <div class="controls">
+                <button id="copyBtn" class="ghost small">Copy Result</button>
+                <button id="clearBtn" class="ghost small">Clear</button>
+            </div>
+
+            <div class="out" id="out">No result yet.</div>
+        </div>
+
+        <footer>Local dev UI • connects to <code>/extract_metric</code> and <code>/get_metric</code> on the same host
+        </footer>
+    </div>
+
+    <script>
+        // Small helper UI logic
+        const queryInput = document.getElementById('queryInput');
+        const gutter = document.getElementById('gutter');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const out = document.getElementById('out');
+        const status = document.getElementById('status');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // line numbers
+        function updateGutter() {
+            const lines = queryInput.value.split('\n').length || 1;
+            gutter.innerHTML = Array.from({ length: lines }, (_, i) => `<div>${i + 1}</div>`).join('');
+        }
+        queryInput.addEventListener('input', () => { updateGutter(); status.textContent = 'Ready'; });
+        updateGutter();
+
+        // helper: pretty JSON
+        function pretty(o) { try { return JSON.stringify(o, null, 2); } catch (e) { return String(o); } }
+
+        // Analyze: calls POST /extract_metric
+        analyzeBtn.addEventListener('click', async () => {
+            const text = queryInput.value.trim();
+            if (!text) { out.textContent = 'Please enter a query.'; return; }
+            status.textContent = 'Analyzing...';
+            out.textContent = 'Calling /extract_metric...';
+            try {
+                const resp = await fetch('/extract_metric', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                if (!resp.ok) throw new Error('Server returned ' + resp.status);
+                const data = await resp.json();
+                window._lastExtraction = data; // store for next step
+                out.textContent = pretty(data);
+                status.textContent = 'Analysis complete';
+
+                // enable fetch button only if metric + location found
+                const hasMetric = Array.isArray(data.metrics) && data.metrics.length > 0;
+                const hasLoc = !!data.location;
+                fetchBtn.disabled = !(hasMetric && hasLoc);
+                if (!hasLoc) status.textContent += ' — location not found';
+                if (!hasMetric) status.textContent += ' — metric not found';
+
+            } catch (err) { out.textContent = 'Error: ' + err.message; status.textContent = 'Error'; }
+        });
+
+        // Fetch metric: calls GET /get_metric?metric=...&location=...
+        fetchBtn.addEventListener('click', async () => {
+            const ext = window._lastExtraction;
+            if (!ext) { out.textContent = 'No extraction available. Click Analyze first.'; return; }
+            const metric = ext.metrics && ext.metrics[0];
+            const location = ext.location;
+            if (!metric || !location) { out.textContent = 'Missing metric or location.'; return; }
+
+            status.textContent = 'Fetching metric...';
+            out.textContent = `Calling /get_metric?metric=${metric}&location=${encodeURIComponent(location)}`;
+            try {
+                const url = `/get_metric?metric=${encodeURIComponent(metric)}&location=${encodeURIComponent(location)}`;
+                const resp = await fetch(url);
+                if (!resp.ok) { const txt = await resp.text(); throw new Error('Provider error: ' + resp.status + ' ' + txt); }
+                const data = await resp.json();
+                out.textContent = pretty(data);
+                status.textContent = 'Fetched';
+            } catch (err) { out.textContent = 'Error: ' + err.message; status.textContent = 'Error'; }
+        });
+
+        copyBtn.addEventListener('click', () => { navigator.clipboard.writeText(out.textContent); });
+        clearBtn.addEventListener('click', () => { out.textContent = 'No result yet.'; status.textContent = 'Ready'; window._lastExtraction = null; fetchBtn.disabled = true; });
+
+        // keyboard shortcut: Ctrl+Enter to analyze
+        queryInput.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { analyzeBtn.click(); } });
+
+        // friendly fallback when running file:// — advise user to serve via dev server
+        (function checkHost() { if (location.protocol === 'file:') { out.textContent = 'Note: open this file via http://localhost:8000/ (or serve it) to let it call the backend endpoints.'; } })();
+    </script>
+</body>
+
+</html>
